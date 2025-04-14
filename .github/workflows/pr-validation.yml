@@ -1,4 +1,4 @@
-name: Validate PR naming, lint & build
+name: validate
 
 on:
   pull_request:
@@ -6,10 +6,14 @@ on:
 
 jobs:
   validate:
+    # ⛔ Skip for version bump PRs
+    if: |
+      !startsWith(github.head_ref, 'version/bump-') &&
+      !startsWith(github.event.pull_request.title, 'chore(WK-00):')
     runs-on: ubuntu-latest
 
     steps:
-      - name: ⬇️ Checkout repository
+      - name: ⬇️ Checkout code
         uses: actions/checkout@v3
 
       - name: 🔍 Check branch name format
@@ -18,7 +22,7 @@ jobs:
           echo "Checking branch name: $BRANCH"
           if ! [[ "$BRANCH" =~ ^(feat|fix|chore|refactor|test|docs|ci|build)/WK-[0-9]+/.+ ]]; then
             echo "❌ Invalid branch name!"
-            echo "✅ Expected format: feat/WK-123/short-description"
+            echo "✅ Expected: feat/WK-123/short-description"
             exit 1
           fi
 
@@ -28,11 +32,11 @@ jobs:
           echo "Checking PR title: $TITLE"
           if ! [[ "$TITLE" =~ ^(feat|fix|chore|refactor|test|docs|ci|build)\(WK-[0-9]+\):\ .+ ]]; then
             echo "❌ Invalid PR title!"
-            echo "✅ Expected format: feat(WK-123): short description"
+            echo "✅ Expected: feat(WK-123): short description"
             exit 1
           fi
 
-      - name: 🟢 Setup Node.js
+      - name: 🛠 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
