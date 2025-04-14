@@ -1,1 +1,10 @@
+
+
+# Essential variables
+# These variables are required for the application to run properly.
+
+
+
+# not required
 ENVIRONMENT=dev #dev, qa, mystar
+PORT=8000

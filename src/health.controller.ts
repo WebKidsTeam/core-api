@@ -21,8 +21,7 @@ export class HealthController {
         return {
             status: 'OK',
             env,
-            version: this.version,
-            message: `Service is running for ${env.toUpperCase()}`,
+            version: this.version
         };
     }
 }
