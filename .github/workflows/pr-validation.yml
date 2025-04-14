@@ -1,4 +1,4 @@
-name: 🔍 Validate PR naming & branch format
+name: Validate PR naming, lint & build
 
 on:
   pull_request:
@@ -7,23 +7,41 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Check branch name format
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🔍 Check branch name format
         run: |
-          BRANCH_NAME="${{ github.head_ref }}"
-          echo "Checking branch: $BRANCH_NAME"
-          if ! [[ "$BRANCH_NAME" =~ ^(feat|fix|chore|refactor|test|docs|ci|build)/WK-[0-9]+/.+ ]]; then
+          BRANCH="${{ github.head_ref }}"
+          echo "Checking branch name: $BRANCH"
+          if ! [[ "$BRANCH" =~ ^(feat|fix|chore|refactor|test|docs|ci|build)/WK-[0-9]+/.+ ]]; then
             echo "❌ Invalid branch name!"
-            echo "✅ Expected format: feat/WK-123/some-description"
+            echo "✅ Expected format: feat/WK-123/short-description"
             exit 1
           fi
 
-      - name: Check PR title format
+      - name: 🔍 Check PR title format
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          echo "Checking PR title: $PR_TITLE"
-          if ! [[ "$PR_TITLE" =~ ^(feat|fix|chore|refactor|test|docs|ci|build)\(WK-[0-9]+\):\ .+ ]]; then
+          TITLE="${{ github.event.pull_request.title }}"
+          echo "Checking PR title: $TITLE"
+          if ! [[ "$TITLE" =~ ^(feat|fix|chore|refactor|test|docs|ci|build)\(WK-[0-9]+\):\ .+ ]]; then
             echo "❌ Invalid PR title!"
             echo "✅ Expected format: feat(WK-123): short description"
             exit 1
           fi
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧹 Run linter
+        run: npm run lint
+
+      - name: 🏗 Run build
+        run: npm run build
