@@ -5,8 +5,8 @@ import { HealthController } from './health.controller';
 @Module({
   imports: [
     ConfigModule.forRoot({
-        isGlobal: true,
-      }),
+      isGlobal: true,
+    }),
   ],
   controllers: [HealthController],
   providers: [],
