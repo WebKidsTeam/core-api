@@ -26,10 +26,10 @@ npm install
 npm run prepare
 ```
 
-3. Надати дозвіл на виконання pre-commit скрипту (на macOS/Linux):
+3. Надати дозволи на всі husky-хуки (на macOS/Linux):
 
 ```bash
-chmod +x .husky/pre-commit
+find .husky -type f -exec chmod +x {} \;
 ```
 
 4. Запуск у dev-режимі:
