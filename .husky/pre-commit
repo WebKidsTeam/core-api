@@ -1,7 +1,5 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
 
 echo "🚨 pre-commit running"
-
 npm run lint:fix
 npm run format
