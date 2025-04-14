@@ -52,9 +52,9 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           branch: version/bump-${{ steps.new_version.outputs.VERSION }}
-          title: 'chore(release): ${{ steps.new_version.outputs.VERSION }}'
+          title: 'chore(WK-00): ${{ steps.new_version.outputs.VERSION }}'
           body: 'This PR bumps the version to `${{ steps.new_version.outputs.VERSION }}`'
-          commit-message: 'chore(release): ${{ steps.new_version.outputs.VERSION }}'
+          commit-message: 'chore(WK-00): ${{ steps.new_version.outputs.VERSION }}'
           base: dev
 
       - name: Enable auto-merge for version bump PR
