@@ -6,15 +6,21 @@ on:
 
 jobs:
   validate:
-    # ⛔ Skip for version bump PRs
-    if: |
-      !startsWith(github.head_ref, 'version/bump-') &&
-      !startsWith(github.event.pull_request.title, 'chore(WK-00):')
     runs-on: ubuntu-latest
 
     steps:
       - name: ⬇️ Checkout code
         uses: actions/checkout@v3
+
+      - name: ⏭ Skip for version bump PRs
+        run: |
+          echo "🧠 PR title: ${{ github.event.pull_request.title }}"
+          echo "🧠 Branch: ${{ github.head_ref }}"
+
+          if [[ "${{ github.head_ref }}" =~ ^version/bump- ]] || [[ "${{ github.event.pull_request.title }}" =~ ^chore\(WK-00\): ]]; then
+            echo "✅ Skipping validation for version bump PR"
+            exit 0
+          fi
 
       - name: 🔍 Check branch name format
         run: |
