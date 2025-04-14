@@ -8,9 +8,11 @@
 - TypeScript
 - REST API
 - @nestjs/config для роботи з оточенням
-- Структура з підтримкою `.env`
+- Husky + ESLint + Prettier для контролю якості коду
 
-## Запуск
+---
+
+## 🚀 Запуск
 
 1. Встановлення залежностей:
 
@@ -18,13 +20,43 @@
 npm install
 ```
 
-2. Запуск у dev-режимі:
+2. Ініціалізація husky (один раз після `npm install`, або автоматично через postinstall):
 
 ```bash
-npm run start
+npm run prepare
 ```
 
-3. За необхідності створити `.env` файл у корені проєкту.
+3. Надати дозвіл на виконання pre-commit скрипту (на macOS/Linux):
+
+```bash
+chmod +x .husky/pre-commit
+```
+
+4. Запуск у dev-режимі:
+
+```bash
+npm run start:dev
+```
+
+5. За необхідності створити `.env` файл у корені проєкту:
+
+```
+PORT=8000
+ENVIRONMENT=dev
+```
+
+---
+
+## ✅ Git hooks (Husky)
+
+Перед кожним комітом автоматично запускаються:
+
+- `npm run lint:fix` — лінтер з автофіксом
+- `npm run format` — Prettier форматування
+
+> Це забезпечує єдиний стиль коду і запобігає потраплянню "сирих" змін у репозиторій.
+
+---
 
 ## 📌 Правила версіонування (SemVer)
 
@@ -37,10 +69,45 @@ npm run start
 
 > Поки триває активна розробка, ми використовуємо `0.x.x`. Починаючи зі стабільного релізу — переходимо на `1.0.0` і далі.
 
+---
+
+## ⚙️ Автоматичне оновлення версії (CI)
+
+Коли **PR мерджиться в `main`**, GitHub Actions автоматично:
+
+- інкрементує patch-версію (наприклад, `0.2.0 → 0.2.1`)
+- оновлює `package.json`
+- створює git-тег
+- пушить ці зміни в репозиторій
+
+> Це працює лише для patch-версій.  
+> Minor та major потрібно оновлювати вручну командою:
+
+```bash
+npm version minor
+npm version major
+```
+
+GitHub Action лежить у `.github/workflows/release-on-merge.yml`.
+
+---
+
 ## 🛠 Команди для зміни версії вручну
 
 ```bash
 npm version patch   # дрібний фікс
 npm version minor   # нова фіча
 npm version major   # ламання API або велика зміна
+```
+
+---
+
+## 📎 Корисні скрипти
+
+```bash
+npm run lint        # перевірка стилю
+npm run lint:fix    # перевірка + автофікс
+npm run format      # вирівнювання коду prettier'ом
+npm run build       # компіляція TypeScript у dist/
+npm run release     # оновлення версії через standard-version
 ```
