@@ -1,0 +1,29 @@
+name: 🔍 Validate PR naming & branch format
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name format
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          echo "Checking branch: $BRANCH_NAME"
+          if ! [[ "$BRANCH_NAME" =~ ^(feat|fix|chore|refactor|test|docs|ci|build)/WK-[0-9]+/.+ ]]; then
+            echo "❌ Invalid branch name!"
+            echo "✅ Expected format: feat/WK-123/some-description"
+            exit 1
+          fi
+
+      - name: Check PR title format
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "Checking PR title: $PR_TITLE"
+          if ! [[ "$PR_TITLE" =~ ^(feat|fix|chore|refactor|test|docs|ci|build)\(WK-[0-9]+\):\ .+ ]]; then
+            echo "❌ Invalid PR title!"
+            echo "✅ Expected format: feat(WK-123): short description"
+            exit 1
+          fi
