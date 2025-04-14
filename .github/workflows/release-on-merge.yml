@@ -24,9 +24,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Bump version
-        run: |
-          npm run release -- --release-as patch
+      - name: Bump version (patch)
+        run: npx standard-version --release-as patch
 
       - name: Commit and push version bump
         run: |
