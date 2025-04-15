@@ -14,16 +14,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 🧠 Skip if version bump
-        run: |
-          echo "PR title: ${{ github.event.pull_request.title }}"
-          echo "Branch: ${{ github.head_ref }}"
-
-          if [[ "${{ github.head_ref }}" =~ ^version/bump- ]] || [[ "${{ github.event.pull_request.title }}" =~ ^chore\(WK-00\): ]]; then
-            echo "✅ Skipping validation for version bump PR"
-            exit 0
-          fi
-
       - name: 🔍 Validate branch name
         run: |
           BRANCH="${{ github.head_ref }}"
@@ -58,6 +48,8 @@ jobs:
 
       - name: 🔁 Auto-bump version if needed
         run: |
+          git checkout ${{ github.head_ref }}
+
           parse_version() {
             IFS='.' read -r MAJ MIN PATCH <<< "$1"
             echo "$MAJ" "$MIN" "$PATCH"
@@ -92,4 +84,4 @@ jobs:
           NEW_VERSION=$(jq -r .version package.json)
           git add package.json package-lock.json
           git commit -m "chore(WK-00): version $NEW_VERSION"
-          git push
+          git push origin HEAD:${{ github.head_ref }}
