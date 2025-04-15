@@ -6,36 +6,37 @@ on:
 
 jobs:
   validate:
+    if: "!contains(github.event.head_commit.message, '[skip-validate]')"
     runs-on: ubuntu-latest
 
     steps:
       - name: ⬇️ Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: ⏭ Skip for version bump PRs
+      - name: 🧠 Skip if version bump
         run: |
-          echo "🧠 PR title: ${{ github.event.pull_request.title }}"
-          echo "🧠 Branch: ${{ github.head_ref }}"
+          echo "PR title: ${{ github.event.pull_request.title }}"
+          echo "Branch: ${{ github.head_ref }}"
 
           if [[ "${{ github.head_ref }}" =~ ^version/bump- ]] || [[ "${{ github.event.pull_request.title }}" =~ ^chore\(WK-00\): ]]; then
             echo "✅ Skipping validation for version bump PR"
             exit 0
           fi
 
-      - name: 🔍 Check branch name format
+      - name: 🔍 Validate branch name
         run: |
           BRANCH="${{ github.head_ref }}"
-          echo "Checking branch name: $BRANCH"
           if ! [[ "$BRANCH" =~ ^(feat|fix|chore|refactor|test|docs|ci|build)/WK-[0-9]+/.+ ]]; then
             echo "❌ Invalid branch name!"
             echo "✅ Expected: feat/WK-123/short-description"
             exit 1
           fi
 
-      - name: 🔍 Check PR title format
+      - name: 🔍 Validate PR title
         run: |
           TITLE="${{ github.event.pull_request.title }}"
-          echo "Checking PR title: $TITLE"
           if ! [[ "$TITLE" =~ ^(feat|fix|chore|refactor|test|docs|ci|build)\(WK-[0-9]+\):\ .+ ]]; then
             echo "❌ Invalid PR title!"
             echo "✅ Expected: feat(WK-123): short description"
@@ -55,3 +56,43 @@ jobs:
 
       - name: 🏗 Run build
         run: npm run build
+
+      - name: 🔁 Auto-bump version if needed
+        run: |
+          git checkout ${{ github.head_ref }}
+
+          parse_version() {
+            IFS='.' read -r MAJ MIN PATCH <<< "$1"
+            echo "$MAJ" "$MIN" "$PATCH"
+          }
+
+          PR_VERSION=$(jq -r .version package.json)
+
+          git fetch origin dev
+          DEV_VERSION=$(git show origin/dev:package.json | jq -r .version)
+
+          read PR_MAJ PR_MIN PR_PATCH <<< "$(parse_version "$PR_VERSION")"
+          read DEV_MAJ DEV_MIN DEV_PATCH <<< "$(parse_version "$DEV_VERSION")"
+
+          echo "🔍 PR version:  $PR_VERSION"
+          echo "🔍 Dev version: $DEV_VERSION"
+
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+
+          if [ "$PR_MAJ" -lt "$DEV_MAJ" ] || { [ "$PR_MAJ" -eq "$DEV_MAJ" ] && [ "$PR_MIN" -lt "$DEV_MIN" ]; }; then
+            echo "⚠️ Behind dev. Bumping..."
+            npm version "$DEV_MAJ.$DEV_MIN.0" --no-git-tag-version
+            npm version patch --no-git-tag-version
+          elif [ "$PR_MAJ" -eq "$DEV_MAJ" ] && [ "$PR_MIN" -eq "$DEV_MIN" ] && [ "$PR_PATCH" -le "$DEV_PATCH" ]; then
+            echo "🔁 Same minor. Patch bump..."
+            npm version patch --no-git-tag-version
+          else
+            echo "✅ Version is up to date"
+            exit 0
+          fi
+
+          NEW_VERSION=$(jq -r .version package.json)
+          git add package.json package-lock.json
+          git commit -m "chore(WK-00): version $NEW_VERSION [skip-validate]"
+          git push origin HEAD:${{ github.head_ref }}
