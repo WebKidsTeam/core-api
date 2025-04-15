@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: ⬇️ Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: ⏭ Skip for version bump PRs
         run: |
@@ -55,3 +57,43 @@ jobs:
 
       - name: 🏗 Run build
         run: npm run build
+
+      - name: 🔁 Compare version with dev and bump if needed
+        run: |
+          parse_version() {
+            IFS='.' read -r MAJ MIN PATCH <<< "$1"
+            echo "$MAJ" "$MIN" "$PATCH"
+          }
+
+          PR_VERSION=$(jq -r .version package.json)
+
+          git fetch origin dev
+          DEV_VERSION=$(git show origin/dev:package.json | jq -r .version)
+
+          read PR_MAJ PR_MIN PR_PATCH <<< "$(parse_version "$PR_VERSION")"
+          read DEV_MAJ DEV_MIN DEV_PATCH <<< "$(parse_version "$DEV_VERSION")"
+
+          echo "🔍 PR version:  $PR_MAJ.$PR_MIN.$PR_PATCH"
+          echo "🔍 Dev version: $DEV_MAJ.$DEV_MIN.$DEV_PATCH"
+
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+
+          if [ "$PR_MAJ" -lt "$DEV_MAJ" ] || { [ "$PR_MAJ" -eq "$DEV_MAJ" ] && [ "$PR_MIN" -lt "$DEV_MIN" ]; }; then
+            echo "⚠️ PR version is behind. Aligning to dev and patch bump..."
+            npm version "$DEV_MAJ.$DEV_MIN.0" --no-git-tag-version
+            npm version patch --no-git-tag-version
+          elif [ "$PR_MAJ" -eq "$DEV_MAJ" ] && [ "$PR_MIN" -eq "$DEV_MIN" ] && [ "$PR_PATCH" -le "$DEV_PATCH" ]; then
+            echo "🔁 Same minor. Patch bump needed..."
+            npm version patch --no-git-tag-version
+          else
+            echo "✅ PR version is ahead. No bump needed."
+            exit 0
+          fi
+
+          NEW_VERSION=$(jq -r .version package.json)
+          echo "📦 New version: $NEW_VERSION"
+
+          git add package.json package-lock.json
+          git commit -m "chore(WK-00): version $NEW_VERSION"
+          git push
