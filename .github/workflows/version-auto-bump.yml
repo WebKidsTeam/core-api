@@ -71,5 +71,5 @@ jobs:
           echo "📦 New version: $NEW_VERSION"
 
           git add package.json package-lock.json
-          git commit -m "chore(release): version $NEW_VERSION"
+          git commit -m "chore(WK-00): version $NEW_VERSION"
           git push
