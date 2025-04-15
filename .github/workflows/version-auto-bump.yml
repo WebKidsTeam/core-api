@@ -53,19 +53,23 @@ jobs:
           git config user.name "GitHub Actions"
           git checkout ${{ github.head_ref }}
 
+          ORIGINAL_VERSION=$(jq -r .version package.json)
+
           if [ "$PR_MAJ" -lt "$DEV_MAJ" ] || { [ "$PR_MAJ" -eq "$DEV_MAJ" ] && [ "$PR_MIN" -lt "$DEV_MIN" ]; }; then
             echo "⚠️ PR version is behind in major/minor. Aligning to dev and patch bump..."
             npm version "$DEV_MAJ.$DEV_MIN.0" --no-git-tag-version
             npm version patch --no-git-tag-version
-            git add package.json package-lock.json
-            git commit -m "chore(release): align with dev and bump"
-            git push
           elif [ "$PR_MAJ" -eq "$DEV_MAJ" ] && [ "$PR_MIN" -eq "$DEV_MIN" ] && [ "$PR_PATCH" -le "$DEV_PATCH" ]; then
             echo "🔁 Same minor. Patch bump needed..."
             npm version patch --no-git-tag-version
-            git add package.json package-lock.json
-            git commit -m "chore(release): bump patch"
-            git push
           else
             echo "✅ PR version is ahead. No bump needed."
+            exit 0
           fi
+
+          NEW_VERSION=$(jq -r .version package.json)
+          echo "📦 New version: $NEW_VERSION"
+
+          git add package.json package-lock.json
+          git commit -m "chore(release): version $NEW_VERSION"
+          git push
